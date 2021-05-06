@@ -178,7 +178,7 @@ class ChunkedBodyParser {
                 }
                 this.current = this.WATTING_LENGTH_LINE_END
             }else {
-                this.length << 4 //挪个位置
+                this.length *= 16 //挪个位置
                 this.length += parseInt(char,16)
             }
         }else if (this.current === this.WATTING_LENGTH_LINE_END) {
@@ -210,7 +210,8 @@ let req = new Request({
     path: '/index.html'
 })
 
-let res = await req.send()
+req.send().then((res) => {
+    let dom = Parser.html(res.body)
+})
 
-let dom = Parser.html(res.body)
 
