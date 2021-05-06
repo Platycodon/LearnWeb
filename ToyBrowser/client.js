@@ -1,4 +1,5 @@
 var net = require("net")
+var Parser = require('./parser')
 
 class Request {
     constructor(options) {
@@ -46,7 +47,7 @@ class Request {
                     connection.end()
                 }
             }).on('error', (err) => {
-
+                reject(err)
             })
         })
     }
@@ -206,12 +207,10 @@ class ChunkedBodyParser {
 let req = new Request({
     host: '127.0.0.1',
     port: 8888,
-    body: {
-        name: '我的'
-    }
+    path: '/index.html'
 })
 
-req.send()
+let res = await req.send()
 
-console.log('111')
+let dom = Parser.html(res.body)
 
