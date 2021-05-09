@@ -10,7 +10,6 @@ http.createServer(function(request,response) {
         body.push(chunk)
     }).on('end', () => {
         body = Buffer.concat(body).toString()
-        console.log('body:',body)
         if (request.url === '/index.html') {
             response.writeHead(200, {'Content-Type': 'text/html'})
             response.end(fs.readFileSync('./test.html'))

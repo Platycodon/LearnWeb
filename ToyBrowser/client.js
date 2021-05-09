@@ -40,7 +40,6 @@ class Request {
             }
 
             connection.on('data', (data) => {
-                console.log('connection respone data:\n', data.toString())
                 parser.receive(data.toString())
                 if (parser.isFinished) {
                     resolve(parser.response)

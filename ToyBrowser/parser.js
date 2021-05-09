@@ -4,9 +4,53 @@ const EOF = Symbol('EOF')
 
 let currentToken = null
 let currentAttribute = null
+let stack = [{type: 'document',children:[]}]
 
 function emit(token) {
-    console.log(token)
+    if (token.type == 'text') {
+        return;
+    }
+
+    let top = stack[stack.length - 1]
+
+    // 遇到startTag,先入栈，继而读取其子的element
+    // 自封闭标签没有子element，顾不需要入栈，直接构建入dom树即可
+    if (token.type == 'startTag') {
+        // 新建element
+        let element  = {
+            type: 'element',
+            children: [],
+            attributes: []
+        }
+
+        element.tagName = token.tagName
+
+        // deal attributes
+        element.attributes = token.attributes
+
+        // element has been dealed, so we push it to it's father's chidlren, 
+        // create their relationship
+        top.children.push(element)
+        // element.parent = top
+
+        // if the element is not self closing, we push it to stack and find it's 
+        // sub elements next. 
+        if (!token.isSelfClosing) {
+            stack.push(element)
+        }
+    } else if (token.type == 'endTag') { // endTag
+        if (token.tagName != top.tagName) {
+            throw new Error(`Tag ${token.tagName} start and end does not match!`)
+        }else {
+            // find true end, means the current element is closing, pop it and deal
+            // next element
+            stack.pop()
+        }
+    }
+
+    if (token.type == 'EOF') {
+        console.log(JSON.stringify(stack[0]))
+    }
 }
 
 
@@ -23,10 +67,10 @@ function data(c) {
         })
         return error(c)
     }else{
-        // emit({
-        //     type: 'text',
-        //     content: c
-        // })
+        emit({
+            type: 'text',
+            content: c
+        })
         return data
     }
 }
@@ -37,7 +81,8 @@ function startTagBegin(c) {
     }else if (c.match(/^[a-zA-z]$/)) {
         currentToken = {
             type: 'startTag',
-            tagName: ''
+            tagName: '',
+            attributes: {}
         }
         return tagName(c)
     }else {
@@ -76,7 +121,7 @@ function tagName(c) {
 function selfCloseTagWaitEnd(c) {
     if (c === '>') {
         currentToken.isSelfClosing = true
-        emit(currentAttribute)
+        emit(currentToken)
         return data
     }else {
         return error(c)
@@ -118,11 +163,11 @@ function afterAttributeName(c) {
     if (c.match(/^[\t\n\f ]$/)) {
         return afterAttributeName
     } else if (c == '/') { // 自封，直接是bool值为true
-        currentToken[currentAttribute.name] = currentAttribute.value
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
         return selfCloseTagWaitEnd
     } else if (c == '>') {
-        currentToken[currentAttribute.name] = currentAttribute.value
-        emit(token)
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
+        emit(currentToken)
         return data
     } else if (c == '=') {
         return beforeAttributeValue
@@ -147,7 +192,7 @@ function beforeAttributeValue(c) {
 
 function doubleQuotedAttributeValue(c) {
     if (c == '\"') { // 遇到双引号镖师结束
-        currentToken[currentAttribute.name] = currentAttribute.value
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
         return afterAttributeValue
     }else if (c == EOF) { // 异常字符，没有列全
         error(c)
@@ -159,7 +204,7 @@ function doubleQuotedAttributeValue(c) {
 
 function singleQuotedAttributeValue(c) {
     if (c == '\'') { // 遇到单引号表师结束
-        currentoken[currentAttribute.name] = currentAttribute.value
+        currentoken.attributes[currentAttribute.name] = currentAttribute.value
         return afterAttributeValue
     }else if (c == EOF) { // 异常字符，没有列全
         error(c)
@@ -171,14 +216,14 @@ function singleQuotedAttributeValue(c) {
 
 function unquotedAttributeValue(c) {
     if (c.match(/^[\t\n\f ]$/)) {// 以空格表示当前值结束 开始尝试读取下一个属性，
-        currentToken[currentAttribute.name] = currentAttribute.value
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
         return beforeAttributeName
     }else if (c == '>') { // 当前tag直接完事了,直接处理token
-        currentToken[currentAttribute.name] = currentAttribute.value
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
         emit(currentToken)
         return data
     }else if (c == '/') { //自封闭标签，准备完事
-        currentToken[currentAttribute.name] = currentAttribute.value
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
         return selfCloseTagWaitEnd
     } else if (c == EOF) {// 惯例异常
         error(c)
@@ -195,6 +240,7 @@ function afterAttributeValue(c) {
         emit(currentToken)
         return data
     }else if (c == '/') { //自封闭标签，准备完事
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
         return selfCloseTagWaitEnd
     }else {
         error(c)
