@@ -1,4 +1,5 @@
 const css = require('css')
+const layout = require('./layout')
 
 const EOF = Symbol('EOF')
 
@@ -169,6 +170,7 @@ function emit(token) {
             if (token.tagName == 'style') {
                 addCSSRules(top.children[0].content)
             }
+            layout(element)
             stack.pop()
         }
         currentTextNode = null
