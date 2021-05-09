@@ -11,7 +11,113 @@ let stack = [{type: 'document',children:[]}]
 function addCSSRules (text) {
     const ast = css.parse(text)
     currentRules.push(...ast.stylesheet.rules)
-    console.log(JSON.stringify(ast))
+}
+
+function specificity(selector) {
+    const p = [0, 0, 0, 0]
+    const selectorPaths = selector.split(' ')
+    for (const path of selectorPaths) {
+        if (path.charAt(0) == '#') {
+            p[1] += 1
+        }else if (path.charAt(0) == '.') {
+            p[2] += 1
+        }else {
+            p[3] += 1
+        }
+    }
+    return p
+}
+
+function compareSpecificity(s1, s2) {
+    if (s1[0] - s2[0]) {
+        return s1[0] - s2[0]
+    }
+    if (s1[1] - s2[1]) {
+        return s1[1] - s2[1]
+    }
+    if (s1[2] - s2[2]) {
+        return s1[2] - s2[2]
+    }
+    return s1[3] - s2[3]
+}
+
+function computeCSS (element) {
+    // we must find element's all fathers that we can determine it's css rule
+    const elements = stack.slice().reverse()
+
+    if (!element.computedStyle) {
+        element.computedStyle = {}
+    }
+
+    for (const rule of currentRules) {
+        // find if current element's rule
+        var selectorPaths = rule.selectors[0].split(' ').reverse()
+        if (!CSSMatch(element, selectorPaths[0])) {
+            continue
+        }
+
+        let matched = false
+
+        // find if it's parent element matches
+        let j = 1
+        for (let i = 0; i < elements.length; i++) {
+            if (CSSMatch(elements[i], selectorPaths[j])) {
+                j++
+            }else {
+                break
+            }
+        }
+        // all parents matches
+        if (j >= selectorPaths.length) {
+            matched = true
+        }
+
+        if (matched) {
+            const sp = specificity(rule.selectors[0])
+            const computedStyle = element.computedStyle
+            for (const declaration of rule.declarations) {
+                if (!computedStyle[declaration.property]) {
+                    computedStyle[declaration.property] = {}
+                }
+                if (!computedStyle[declaration.property].specificity || 
+                    compareSpecificity(computedStyle[declaration.property].specificity, sp) < 0) {
+                        computedStyle[declaration.property].value = declaration.value
+                        computedStyle[declaration.property].specificity = sp
+                }
+            }
+            console.log(JSON.stringify(element.computedStyle))
+        }
+    }
+}
+
+function CSSMatch (element, selector) {
+    // if element is a text node, jump it
+    if (!selector || !element.attributes) {
+        return false
+    }
+
+    if (selector.charAt(0) == '#') {
+        // id selector
+        const attr = element.attributes.filter(attr => attr.name == 'id')[0]
+        if (attr && attr.value == selector.replace('#', '')) {
+            // find
+            return true
+        }
+    }else if (selector.charAt(0) == '.') {
+        // class selector
+        const attr = element.attributes.filter(attr => attr.name == 'class')[0]
+        if (attr && attr.value == selector.replace('.', '')) {
+            // find
+            return true
+        }
+    }else {
+        // tag name selector
+        if (element.tagName === selector) {
+            return true
+        }
+    }
+    // not find
+    return false
 }
 
 function emit(token) {
@@ -37,6 +143,9 @@ function emit(token) {
                 value: token.attributes[key]
             })
         }
+
+        // usually, we computed element's css when element is created
+        computeCSS(element)
 
         // element has been dealed, so we push it to it's father's chidlren, 
         // create their relationship
@@ -226,7 +335,7 @@ function doubleQuotedAttributeValue(c) {
 
 function singleQuotedAttributeValue(c) {
     if (c == '\'') { // 遇到单引号表师结束
-        currentoken.attributes[currentAttribute.name] = currentAttribute.value
+        currentToken.attributes[currentAttribute.name] = currentAttribute.value
         return afterAttributeValue
     }else if (c == EOF) { // 异常字符，没有列全
         error(c)

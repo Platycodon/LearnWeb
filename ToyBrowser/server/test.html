@@ -3,16 +3,28 @@
         <meta charset="utf-8" />
         <title></title>
         <style>
-            div{
+            body div div{
                 width:100px;
                 height:100px;
                 background:pink;
+            }
+            body div #id {
+                width:100px;
+                height:100px;
+                background:yellow;
+            }
+            body div .class {
+                width:100px;
+                height:100px;
+                background:green;
             }
         </style>
     </head>
     <body>
         <div>
-            this is a box
+            <div class='class' id='id'>
+                this is a box
+            </div>
         </div>
         <form action="http://localhost:8080" method="POST">
             name:<input type="text" name="name"/><br/>
