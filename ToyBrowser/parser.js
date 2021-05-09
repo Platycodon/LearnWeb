@@ -4,12 +4,10 @@ const EOF = Symbol('EOF')
 
 let currentToken = null
 let currentAttribute = null
+let currentTextNode = null
 let stack = [{type: 'document',children:[]}]
 
 function emit(token) {
-    if (token.type == 'text') {
-        return;
-    }
 
     let top = stack[stack.length - 1]
 
@@ -26,7 +24,12 @@ function emit(token) {
         element.tagName = token.tagName
 
         // deal attributes
-        element.attributes = token.attributes
+        for (const key in token.attributes) {
+            element.attributes.push({
+                name: key,
+                value: token.attributes[key]
+            })
+        }
 
         // element has been dealed, so we push it to it's father's chidlren, 
         // create their relationship
@@ -38,6 +41,8 @@ function emit(token) {
         if (!token.isSelfClosing) {
             stack.push(element)
         }
+
+        currentTextNode = null
     } else if (token.type == 'endTag') { // endTag
         if (token.tagName != top.tagName) {
             throw new Error(`Tag ${token.tagName} start and end does not match!`)
@@ -46,6 +51,16 @@ function emit(token) {
             // next element
             stack.pop()
         }
+        currentTextNode = null
+    }else if (token.type == 'text') { // text
+        if (currentTextNode == null) {
+            currentTextNode = {
+                type: 'text',
+                content: ''
+            }
+            top.children.push(currentTextNode)
+        }
+        currentTextNode.content += token.content
     }
 
     if (token.type == 'EOF') {
