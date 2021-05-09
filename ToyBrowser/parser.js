@@ -86,7 +86,6 @@ function computeCSS (element) {
                         computedStyle[declaration.property].specificity = sp
                 }
             }
-            console.log(JSON.stringify(element.computedStyle))
         }
     }
 }
@@ -170,7 +169,7 @@ function emit(token) {
             if (token.tagName == 'style') {
                 addCSSRules(top.children[0].content)
             }
-            layout(element)
+            layout(top)
             stack.pop()
         }
         currentTextNode = null

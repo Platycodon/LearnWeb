@@ -32,7 +32,7 @@ function layout(element) {
     let elementStyle = getStyle(element)
 
     // we just realize flex layout
-    if (elementStyle.display != 'flex') {
+    if (elementStyle.display != 'flex' && !elementStyle.flex) {
         return
     }
 
@@ -47,7 +47,8 @@ function layout(element) {
     const style = elementStyle
 
     // deal default values
-    ['width', 'height'].forEach(e => {
+    let a = ['width', 'height']
+    a.forEach(e => {
         if (style[e] == 'auto' || style[e] === '') {
             style[e] = null
         }
@@ -116,12 +117,83 @@ function layout(element) {
     if (style.flexWrap == 'wrap-reverse') {
         let tmp = crossEnd
         crossEnd = crossStart
-        crossStart = crossEnd
+        crossStart = tmp
         crossSign = -1
     }else {
         crossBase = 0
         crossSign = +1
     }
+
+    // create lines with items
+
+    // if element is a auto size element, figure out it's main size
+    let isAutoMainSize = false
+    if (!style[mainSize]) { 
+        style[mainSize] = 0
+        for (const item of items) {
+            const itemStyle = getStyle(item)
+            if (itemStyle[mainSize]) {
+                style[mainSize] += itemStyle[mainSize]
+            }
+        }
+        isAutoMainSize = true
+    }
+
+    // deal all 
+    const flexLine = []
+    const flexLines = [flexLine]
+
+    let mainSpace = style[mainSize]
+    let crossSpace = 0
+
+    for (const item of items) {
+        const itemStyle = getStyle(item)
+
+        if (!itemStyle[mainSize]) {
+            itemStyle[mainSize] = 0
+        }
+
+        if (itemStyle.flex || itemStyle.display == 'flex') {
+            // flex item 
+            flexLine.push(item)
+        }else if (style.flexWrap == 'nowrap' && isAutoMainSize) {
+            // auto size element will never be full
+            mainSpace -= itemStyle[mainSize]
+            if (itemStyle[crossSize]) {
+                crossSpace = crossSpace > itemStyle[crossSize] ? crossSpace : itemStyle[crossSize]
+            }
+            flexLine.push(item)
+        }else {
+            if (itemStyle[mainSize] > style[mainSize]) {
+                itemStyle[mainSize] = style[mainSize]
+            }
+            if (mainSpace < itemStyle[mainSize]) {
+                // not enough
+                // save current line
+                flexLine.mainSpace = mainSpace
+                flexLine.crossSpace = crossSpace
+
+                // create a new line
+                flexLine = [item]
+                flexLines.push(flexLine)
+
+                flexLine.mainSpace = style[mainSize] - itemStyle[mainSize]
+                crossSpace = itemStyle[crossSpace]
+
+            }else {
+                // enough
+                flexLine.push(item)
+            }
+        }
+
+        if (itemStyle[crossSize]) {
+            crossSpace = crossSpace > itemStyle[crossSize] ? crossSpace : itemStyle[crossSize]
+        }
+        mainSpace -= itemStyle[mainSize]
+    }
+    flexLine.mainSpace = mainSpace
+
+    console.log(items)
 }
 
 module.exports = layout

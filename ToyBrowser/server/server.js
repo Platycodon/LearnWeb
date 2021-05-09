@@ -12,7 +12,7 @@ http.createServer(function(request,response) {
         body = Buffer.concat(body).toString()
         if (request.url === '/index.html') {
             response.writeHead(200, {'Content-Type': 'text/html'})
-            response.end(fs.readFileSync('./test.html'))
+            response.end(fs.readFileSync('./demo.html'))
         }else {
             response.writeHead(200, {'Content-Type': 'text/html'})
             response.end('hello world\n')
