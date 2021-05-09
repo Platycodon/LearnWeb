@@ -1,11 +1,18 @@
-// const { match } = require("node:assert")
+const css = require('css')
 
 const EOF = Symbol('EOF')
 
 let currentToken = null
 let currentAttribute = null
 let currentTextNode = null
+let currentRules = []
 let stack = [{type: 'document',children:[]}]
+
+function addCSSRules (text) {
+    const ast = css.parse(text)
+    currentRules.push(...ast.stylesheet.rules)
+    console.log(JSON.stringify(ast))
+}
 
 function emit(token) {
 
@@ -34,7 +41,7 @@ function emit(token) {
         // element has been dealed, so we push it to it's father's chidlren, 
         // create their relationship
         top.children.push(element)
-        // element.parent = top
+        element.parent = top
 
         // if the element is not self closing, we push it to stack and find it's 
         // sub elements next. 
@@ -47,8 +54,12 @@ function emit(token) {
         if (token.tagName != top.tagName) {
             throw new Error(`Tag ${token.tagName} start and end does not match!`)
         }else {
-            // find true end, means the current element is closing, pop it and deal
+            // find end, means the current element is closing, pop it and deal
             // next element
+            // in aditional, if the tag is a style tag, we should compute it's css
+            if (token.tagName == 'style') {
+                addCSSRules(top.children[0].content)
+            }
             stack.pop()
         }
         currentTextNode = null
@@ -61,10 +72,6 @@ function emit(token) {
             top.children.push(currentTextNode)
         }
         currentTextNode.content += token.content
-    }
-
-    if (token.type == 'EOF') {
-        console.log(JSON.stringify(stack[0]))
     }
 }
 
