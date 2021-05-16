@@ -387,4 +387,5 @@ module.exports.html = function html(html) {
         state = state(c)
     }
     state = state(EOF)
+    return stack[0]
 }

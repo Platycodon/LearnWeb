@@ -1,52 +1,43 @@
-<html>
+
 <style>
     #container {
-        border: solid 1px black;
         display: flex;
         flexDirection: row;
+        background: rgb(255,255,255);
     }
 
     #container #left {
         width: 300px;
         height: 600px;
-        background: green;
+        background: rgb(0,255,0);
     }
 
     #container #right {
         display: flex;
         flexDirection: column;
+        width: 300px;
+        height: 600px;
+        background: rgb(255,0,255);
     }
 
     #container #right #rightTop {
         width: 300px;
-        height: 300px;
-        background: hotpink;
+        height: 200px;
+        background: rgb(255,0,0);
     }
 
     #container #right #rightBottom {
         width: 300px;
         height: 300px;
-        background: yellow;
-    }
-
-    #container2 {
-        display: flex;
-        width: 600px;
-        height: 600px;
+        background: rgb(0,0,255);
     }
 </style>
 
-<body>
-    <div id='container'>
-        <div id='left'></div>
-        <div id='right'>
-            <div id='rightTop'></div>
-            <div id='rightBottom'></div>
-        </div>
+<div id='container'>
+    <div id='left'></div>
+    <div id='right'>
+        <div id='rightTop'></div>
+        <div id='rightBottom'></div>
+        <div id='rightTop'></div>
     </div>
-    <div id='container2'>
-        
-    </div>
-</body>
-
-</html>
+</div>

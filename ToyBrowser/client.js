@@ -1,5 +1,7 @@
+const images = require("images")
 var net = require("net")
 var Parser = require('./parser')
+const Render = require('./render')
 
 class Request {
     constructor(options) {
@@ -203,14 +205,25 @@ class ChunkedBodyParser {
     }
 }
 
-let req = new Request({
-    host: '127.0.0.1',
-    port: 8888,
-    path: '/index.html'
-})
+void async function() {
+    let req = new Request({
+        host: '127.0.0.1',
+        port: 8888,
+        path: '/index.html'
+    })
 
-req.send().then((res) => {
+    let res = await req.send()
     let dom = Parser.html(res.body)
-})
+
+    let viewport = images(1000, 1000)
+
+    Render.render(viewport, dom)
+
+    viewport.save('./dom.jpg')
+}()
+
+
+
+
 
 
